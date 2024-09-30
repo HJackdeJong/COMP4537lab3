@@ -1,8 +1,13 @@
 const http = require('http');
-const locals = require('./locals/en/en.js'); // Adjust the path as per your folder structure
-const { getDate } = require('./modules/utils.js'); // Adjust the path as per your folder structure
+const path = require('path');
+const fs = require('fs');
 
-const server = (req, res) => {
+// Importing the locals and the getDate function from your modules
+const locals = require('./locals/en/en.js');
+const { getDate } = require('./modules/utils.js');
+
+// Create the HTTP server
+http.createServer(function(req, res) {
     const url = new URL(req.url, `http://${req.headers.host}`);
     console.log(`Received pathname: ${url.pathname}`);
 
@@ -20,7 +25,7 @@ const server = (req, res) => {
         res.writeHead(404, { "Content-Type": "text/html" });
         res.end("404 Not Found");
     }
-};
 
-// Export the handler for Vercel
-module.exports = server;
+}).listen(process.env.PORT || 3000, () => {
+    console.log(`Server is running on port ${process.env.PORT || 3000}`);
+});
