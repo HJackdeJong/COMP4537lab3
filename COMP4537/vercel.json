@@ -1,9 +1,0 @@
-{
-  "version": 2,
-  "builds": [
-    { "src": "labs/3/getDate/server.js", "use": "@vercel/node" }
-  ],
-  "routes": [
-    { "src": "/(.*)", "dest": "labs/3/getDate/server.js" }
-  ]
-}
