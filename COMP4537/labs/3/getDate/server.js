@@ -1,57 +1,85 @@
 const http = require('http');
 const url = require('url');
-const dotenv = require('dotenv');
+const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { getDate } = require('./modules/utils');
 const locals = require('./lang/en/en.js');
+require('dotenv').config();
 
-// Load environment variables from .env for local testing
-dotenv.config();
+// Configure the S3 Client using environment variables
+const s3 = new S3Client({
+    region: process.env.AWS_REGION || 'us-east-2',
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    }
+});
 
-const server = http.createServer(async (req, res) => {
+const bucketName = 'comp4537lab3bucket'; // Replace with your bucket name
+const fileName = 'file.txt';
+
+const server = http.createServer((req, res) => {
     const parsedUrl = url.parse(req.url, true);
     const pathname = parsedUrl.pathname;
     const query = parsedUrl.query;
 
-    // Dynamically import Octokit when needed
-    const { Octokit } = await import('@octokit/rest');
-    const octokit = new Octokit({
-        auth: process.env.GITHUB_TOKEN,
-    });
-
     if (pathname === '/COMP4537/labs/3/getDate/') {
-        // Handle the /getDate endpoint
         const name = query.name || 'Guest';
-        const serverTime = getDate();  // Your original getDate function
+        const serverTime = getDate();
         const message = locals.MESSAGES.message.replace('%1', name).concat(serverTime);
-        
+
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(`<p style="color: blue;">${message}</p>`);
 
     } else if (pathname === '/COMP4537/labs/3/writeFile/') {
-        // Handle the /writeFile endpoint
+        console.log("AWS Region:", process.env.AWS_REGION);
         const textToWrite = query.text || '';
 
-        appendToGist(octokit, textToWrite)
+        // Read the file from S3
+        s3.send(new GetObjectCommand({ Bucket: bucketName, Key: fileName }))
+            .then(data => {
+                // Convert the Body stream to a string
+                return streamToString(data.Body);
+            })
+            .then(currentContent => {
+                const updatedContent = currentContent + `\n${textToWrite}`;
+
+                // Write the updated content back to S3
+                return s3.send(new PutObjectCommand({
+                    Bucket: bucketName,
+                    Key: fileName,
+                    Body: updatedContent,
+                    ContentType: 'text/plain',
+                }));
+            })
             .then(() => {
                 res.writeHead(200, { 'Content-Type': 'text/plain' });
                 res.end(`Successfully appended to file: ${textToWrite}`);
             })
             .catch(err => {
-                console.error('Error writing to Gist:', err);
+                console.error(err);
                 res.writeHead(500, { 'Content-Type': 'text/plain' });
                 res.end('Error writing to file');
             });
 
     } else if (pathname === '/COMP4537/labs/3/readFile/file.txt') {
-        readGist(octokit)
+        // Read the file from S3
+        s3.send(new GetObjectCommand({ Bucket: bucketName, Key: fileName }))
+            .then(data => {
+                return streamToString(data.Body);
+            })
             .then(content => {
                 res.writeHead(200, { 'Content-Type': 'text/plain' });
                 res.end(content);
             })
             .catch(err => {
-                console.error('Error reading from Gist:', err);
-                res.writeHead(500, { 'Content-Type': 'text/plain' });
-                res.end('Error reading file');
+                if (err.name === 'NoSuchKey') {
+                    res.writeHead(404, { 'Content-Type': 'text/plain' });
+                    res.end('404: File not found');
+                } else {
+                    console.error(err);
+                    res.writeHead(500, { 'Content-Type': 'text/plain' });
+                    res.end('Error reading file');
+                }
             });
 
     } else {
@@ -60,32 +88,14 @@ const server = http.createServer(async (req, res) => {
     }
 });
 
-async function appendToGist(octokit, newContent) {
-    try {
-        const gist = await octokit.gists.get({ gist_id: process.env.GIST_ID });
-        const currentContent = gist.data.files['file.txt'].content;
-        const updatedContent = currentContent + '\n' + newContent;
-
-        await octokit.gists.update({
-            gist_id: process.env.GIST_ID,
-            files: {
-                'file.txt': {
-                    content: updatedContent,
-                },
-            },
-        });
-    } catch (error) {
-        throw new Error('Error appending to Gist: ' + error.message);
-    }
-}
-
-async function readGist(octokit) {
-    try {
-        const gist = await octokit.gists.get({ gist_id: process.env.GIST_ID });
-        return gist.data.files['file.txt'].content;
-    } catch (error) {
-        throw new Error('Error reading Gist: ' + error.message);
-    }
+// Utility function to convert a stream to a string
+function streamToString(stream) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        stream.on('data', chunk => chunks.push(chunk));
+        stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+        stream.on('error', reject);
+    });
 }
 
 // Conditional for local testing
