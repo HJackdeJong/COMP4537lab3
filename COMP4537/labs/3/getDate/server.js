@@ -2,7 +2,7 @@ const http = require('http');
 const url = require('url');
 const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { getDate } = require('./modules/utils');
-const { MESSAGES, AWS_CONFIG } = require('./lang/en/en.js');
+const { MESSAGES, AWS_CONFIG, PATHS } = require('./lang/en/en.js');
 require('dotenv').config();
 
 const s3 = new S3Client({
@@ -22,7 +22,7 @@ const server = http.createServer((req, res) => {
     const pathname = parsedUrl.pathname;
     const query = parsedUrl.query;
 
-    if (pathname === '/COMP4537/labs/3/getDate/') {
+    if (pathname === PATHS.getDate) {
         const name = query.name || MESSAGES.defaultName;
         const serverTime = getDate();
         const message = MESSAGES.greeting.replace('%1', name).concat(serverTime);
@@ -30,7 +30,7 @@ const server = http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(`<p style="color: blue;">${message}</p>`);
 
-    } else if (pathname === '/COMP4537/labs/3/writeFile/') {
+    } else if (pathname === PATHS.writeFile) {
         console.log(MESSAGES.awsRegionLog, process.env.AWS_REGION);
         const textToWrite = query.text || MESSAGES.defaultText;
 
@@ -58,7 +58,7 @@ const server = http.createServer((req, res) => {
                 res.end(MESSAGES.errorWritingFile);
             });
 
-    } else if (pathname === '/COMP4537/labs/3/readFile/file.txt') {
+    } else if (pathname === PATHS.readFile) {
         s3.send(new GetObjectCommand({ Bucket: bucketName, Key: fileName }))
             .then(data => {
                 return streamToString(data.Body);

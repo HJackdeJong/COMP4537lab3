@@ -17,4 +17,10 @@ const AWS_CONFIG = {
     fileName: 'file.txt'
 };
 
-module.exports = { MESSAGES, AWS_CONFIG };
+const PATHS = {
+    getDate: '/COMP4537/labs/3/getDate/',
+    writeFile: '/COMP4537/labs/3/writeFile/',
+    readFile: '/COMP4537/labs/3/readFile/file.txt'
+};
+
+module.exports = { MESSAGES, AWS_CONFIG, PATHS };
