@@ -1,6 +1,7 @@
 const { getDate } = require('../modules/utils');
 const locals = require('../locals/en/en.js');
 
+
 export default function handler(req, res) {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const name = url.searchParams.get('name') || "Guest";
