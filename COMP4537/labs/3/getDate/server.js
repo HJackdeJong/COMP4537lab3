@@ -3,7 +3,7 @@ const url = require('url');
 const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { getDate } = require('./modules/utils');
 const locals = require('./lang/en/en.js');
-const MESSAGES = require('./lang/en/messages.js');
+const MESSAGES = require('./lang/en/en.js');
 require('dotenv').config();
 
 // Configure the S3 Client using environment variables
