@@ -32,6 +32,7 @@ const server = http.createServer((req, res) => {
         res.end(`<p style="color: blue;">${message}</p>`);
 
     } else if (pathname === '/COMP4537/labs/3/writeFile/') {
+        console.log("AWS Region:", process.env.AWS_REGION);
         const textToWrite = query.text || '';
 
         // Read the file from S3
@@ -56,6 +57,7 @@ const server = http.createServer((req, res) => {
                 res.end(`Successfully appended to file: ${textToWrite}`);
             })
             .catch(err => {
+                console.error(err);
                 res.writeHead(500, { 'Content-Type': 'text/plain' });
                 res.end('Error writing to file');
             });
@@ -75,6 +77,7 @@ const server = http.createServer((req, res) => {
                     res.writeHead(404, { 'Content-Type': 'text/plain' });
                     res.end('404: File not found');
                 } else {
+                    console.error(err);
                     res.writeHead(500, { 'Content-Type': 'text/plain' });
                     res.end('Error reading file');
                 }
@@ -99,6 +102,9 @@ function streamToString(stream) {
 // Conditional for local testing
 if (require.main === module) {
     const PORT = 3000;
+    server.listen(PORT, () => {
+        console.log(`Server is running locally on port ${PORT}`);
+    });
 } else {
     module.exports = server;
 }
