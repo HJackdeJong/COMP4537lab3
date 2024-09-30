@@ -11,4 +11,10 @@ const MESSAGES = {
     serverRunning: "Server is running locally on port %1"
 };
 
-module.exports = { MESSAGES };
+const AWS_CONFIG = {
+    endpoint: 'https://s3.us-east-2.amazonaws.com',
+    bucketName: 'comp4537lab3bucket',
+    fileName: 'file.txt'
+};
+
+module.exports = { MESSAGES, AWS_CONFIG };

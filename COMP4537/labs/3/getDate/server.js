@@ -2,21 +2,20 @@ const http = require('http');
 const url = require('url');
 const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { getDate } = require('./modules/utils');
-const { MESSAGES } = require('./lang/en/en.js');
+const { MESSAGES, AWS_CONFIG } = require('./lang/en/en.js');
 require('dotenv').config();
 
-// Configure the S3 Client using environment variables
 const s3 = new S3Client({
-    region: 'us-east-2', // Ensure this is the correct region for your bucket
+    region: 'us-east-2',
     credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     },
-    endpoint: `https://s3.us-east-2.amazonaws.com`,
+    endpoint: AWS_CONFIG.endpoint,
 });
 
-const bucketName = 'comp4537lab3bucket';
-const fileName = 'file.txt';
+const bucketName = AWS_CONFIG.bucketName;
+const fileName = AWS_CONFIG.fileName;
 
 const server = http.createServer((req, res) => {
     const parsedUrl = url.parse(req.url, true);
@@ -35,16 +34,13 @@ const server = http.createServer((req, res) => {
         console.log(MESSAGES.awsRegionLog, process.env.AWS_REGION);
         const textToWrite = query.text || MESSAGES.defaultText;
 
-        // Read the file from S3
         s3.send(new GetObjectCommand({ Bucket: bucketName, Key: fileName }))
             .then(data => {
-                // Convert the Body stream to a string
                 return streamToString(data.Body);
             })
             .then(currentContent => {
                 const updatedContent = currentContent + `\n${textToWrite}`;
 
-                // Write the updated content back to S3
                 return s3.send(new PutObjectCommand({
                     Bucket: bucketName,
                     Key: fileName,
@@ -63,7 +59,6 @@ const server = http.createServer((req, res) => {
             });
 
     } else if (pathname === '/COMP4537/labs/3/readFile/file.txt') {
-        // Read the file from S3
         s3.send(new GetObjectCommand({ Bucket: bucketName, Key: fileName }))
             .then(data => {
                 return streamToString(data.Body);
@@ -89,7 +84,6 @@ const server = http.createServer((req, res) => {
     }
 });
 
-// Utility function to convert a stream to a string
 function streamToString(stream) {
     return new Promise((resolve, reject) => {
         const chunks = [];
@@ -99,12 +93,4 @@ function streamToString(stream) {
     });
 }
 
-// Conditional for local testing
-if (require.main === module) {
-    const PORT = 3000;
-    server.listen(PORT, () => {
-        console.log(MESSAGES.serverRunning.replace('%1', PORT));
-    });
-} else {
-    module.exports = server;
-}
+module.exports = server;
