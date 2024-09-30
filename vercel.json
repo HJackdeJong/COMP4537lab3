@@ -4,6 +4,8 @@
     { "src": "COMP4537/labs/3/getDate/server.js", "use": "@vercel/node" }
   ],
   "routes": [
-    { "src": "/COMP4537/labs/3/getDate/?(.*)", "dest": "/COMP4537/labs/3/getDate/server.js" }
+    { "src": "/COMP4537/labs/3/getDate/?(.*)", "dest": "/COMP4537/labs/3/getDate/server.js" },
+    { "src": "/COMP4537/labs/3/writeFile/?(.*)", "dest": "/COMP4537/labs/3/getDate/server.js" },
+    { "src": "/COMP4537/labs/3/readFile/file.txt", "dest": "/COMP4537/labs/3/getDate/server.js" }
   ]
 }
