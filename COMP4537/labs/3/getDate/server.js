@@ -19,14 +19,16 @@ const server = http.createServer(async (req, res) => {
     });
 
     if (pathname === '/COMP4537/labs/3/getDate/') {
+        // Handle the /getDate endpoint
         const name = query.name || 'Guest';
         const serverTime = getDate();  // Your original getDate function
         const message = locals.MESSAGES.message.replace('%1', name).concat(serverTime);
-
+        
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(`<p style="color: blue;">${message}</p>`);
 
     } else if (pathname === '/COMP4537/labs/3/writeFile/') {
+        // Handle the /writeFile endpoint
         const textToWrite = query.text || '';
 
         appendToGist(octokit, textToWrite)
