@@ -1,0 +1,26 @@
+Instructions on basic installation and verification of node.js
+
+1- Please install nodejs from https://nodejs.org/en/download/
+ ( choose LTS version )
+ 
+2- restart computer so that env path variable gets updated
+
+3- at commend prompt type
+command prompt> node -v
+v8.11.3 // confirms successful installation of nodeJS basics
+
+4- create a folder (e.g c:\nodeJStest) and copy app.js there
+command prompt>cd "c:\nodeJStest"
+
+5- run the app by 
+command prompt> node app.js
+
+6- on the browser enter http://localhost:8080
+If everything ok, it will print down the content of file app.js 
+"
+'use strict';
+var http = require('http');
+var fs = require('fs');
+var numberOfRequests = 0;....
+"
+-----
