@@ -3,6 +3,7 @@ const url = require('url');
 const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { getDate } = require('./modules/utils');
 const locals = require('./lang/en/en.js');
+const MESSAGES = require('./lang/en/messages.js'); // Added MESSAGES import
 require('dotenv').config();
 
 // Configure the S3 Client using environment variables
@@ -15,7 +16,7 @@ const s3 = new S3Client({
     endpoint: `https://s3.us-east-2.amazonaws.com`,
 });
 
-const bucketName = 'comp4537lab3bucket'; // Replace with your bucket name
+const bucketName = 'comp4537lab3bucket';
 const fileName = 'file.txt';
 
 const server = http.createServer((req, res) => {
@@ -23,7 +24,7 @@ const server = http.createServer((req, res) => {
     const pathname = parsedUrl.pathname;
     const query = parsedUrl.query;
 
-    if (pathname === '/COMP4537/labs/3/getDate/') {
+    if (pathname === MESSAGES.PATHS.getDate) {
         const name = query.name || 'Guest';
         const serverTime = getDate();
         const message = locals.MESSAGES.message.replace('%1', name).concat(serverTime);
@@ -31,8 +32,8 @@ const server = http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(`<p style="color: blue;">${message}</p>`);
 
-    } else if (pathname === '/COMP4537/labs/3/writeFile/') {
-        console.log("AWS Region:", process.env.AWS_REGION);
+    } else if (pathname === MESSAGES.PATHS.writeFile) {
+        console.log(MESSAGES.LOGS.awsRegion, process.env.AWS_REGION);
         const textToWrite = query.text || '';
 
         // Read the file from S3
@@ -54,15 +55,15 @@ const server = http.createServer((req, res) => {
             })
             .then(() => {
                 res.writeHead(200, { 'Content-Type': 'text/plain' });
-                res.end(`Successfully appended to file: ${textToWrite}`);
+                res.end(MESSAGES.SUCCESS.fileAppended.replace('%s', textToWrite));
             })
             .catch(err => {
                 console.error(err);
                 res.writeHead(500, { 'Content-Type': 'text/plain' });
-                res.end('Error writing to file');
+                res.end(MESSAGES.ERROR.fileWrite);
             });
 
-    } else if (pathname === '/COMP4537/labs/3/readFile/file.txt') {
+    } else if (pathname === MESSAGES.PATHS.readFile) {
         // Read the file from S3
         s3.send(new GetObjectCommand({ Bucket: bucketName, Key: fileName }))
             .then(data => {
@@ -75,17 +76,17 @@ const server = http.createServer((req, res) => {
             .catch(err => {
                 if (err.name === 'NoSuchKey') {
                     res.writeHead(404, { 'Content-Type': 'text/plain' });
-                    res.end('404: File not found');
+                    res.end(MESSAGES.ERROR.fileNotFound);
                 } else {
                     console.error(err);
                     res.writeHead(500, { 'Content-Type': 'text/plain' });
-                    res.end('Error reading file');
+                    res.end(MESSAGES.ERROR.fileRead);
                 }
             });
 
     } else {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('404: Not Found');
+        res.end(MESSAGES.ERROR.notFound);
     }
 });
 
@@ -103,7 +104,7 @@ function streamToString(stream) {
 if (require.main === module) {
     const PORT = 3000;
     server.listen(PORT, () => {
-        console.log(`Server is running locally on port ${PORT}`);
+        console.log(MESSAGES.LOGS.serverRunning.replace('%s', PORT));
     });
 } else {
     module.exports = server;
