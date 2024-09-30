@@ -2,27 +2,22 @@ function getDate() {
     // Get the current date and time
     const now = new Date();
 
-    // Get the UTC time and offset it by -8 hours for Pacific Standard Time (PST)
-    const options = {
-        timeZone: 'America/Los_Angeles',
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        timeZoneName: 'long'
-    };
+    // Convert the time to the Pacific Time Zone using toLocaleString()
+    const options = { timeZone: 'America/Los_Angeles', timeZoneName: 'short' };
 
-    // Get the date string in PST format
-    const pstDate = now.toLocaleString('en-US', options);
+    // Get the individual parts of the date and time
+    const weekday = now.toLocaleString('en-US', { weekday: 'short', timeZone: 'America/Los_Angeles' });
+    const month = now.toLocaleString('en-US', { month: 'short', timeZone: 'America/Los_Angeles' });
+    const day = now.toLocaleString('en-US', { day: 'numeric', timeZone: 'America/Los_Angeles' });
+    const year = now.toLocaleString('en-US', { year: 'numeric', timeZone: 'America/Los_Angeles' });
+    const time = now.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles' });
 
-    // Get the GMT offset manually
-    const gmtOffset = now.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour12: false, timeZoneName: 'short' });
+    // Get the time zone offset and name
+    const timeZoneString = now.toLocaleTimeString('en-US', options).match(/\(([^)]+)\)$/)[1];
+    const gmtOffset = now.toLocaleTimeString('en-US', options).match(/GMT([+-]\d{4})/)[1];
 
-    // Combine both results manually to get the full string
-    return `${pstDate} GMT${gmtOffset.match(/GMT([\+\-]\d+)/)[1]} (${gmtOffset.match(/\(([^)]+)\)$/)[1]})`;
+    // Construct the desired output
+    return `${weekday} ${month} ${day} ${year} ${time} GMT${gmtOffset} (${timeZoneString})`;
 }
 
 module.exports = { getDate };
