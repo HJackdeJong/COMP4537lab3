@@ -103,9 +103,6 @@ function streamToString(stream) {
 // Conditional for local testing
 if (require.main === module) {
     const PORT = 3000;
-    server.listen(PORT, () => {
-        console.log(MESSAGES.LOGS.serverRunning.replace('%s', PORT));
-    });
 } else {
     module.exports = server;
 }
