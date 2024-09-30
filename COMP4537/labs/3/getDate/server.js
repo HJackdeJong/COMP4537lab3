@@ -7,11 +7,12 @@ require('dotenv').config();
 
 // Configure the S3 Client using environment variables
 const s3 = new S3Client({
-    region: process.env.AWS_REGION || 'us-east-2',
+    region: 'us-east-2', // Ensure this is the correct region for your bucket
     credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    }
+    },
+    endpoint: `https://s3.us-east-2.amazonaws.com`,
 });
 
 const bucketName = 'comp4537lab3bucket'; // Replace with your bucket name
