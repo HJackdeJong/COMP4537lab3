@@ -11,18 +11,16 @@ const server = http.createServer((req, res) => {
     const query = parsedUrl.query;
 
     if (pathname === '/COMP4537/labs/3/getDate/') {
-        // Handle the /getDate endpoint
         const name = query.name || 'Guest';
         const serverTime = getDate();
         const message = locals.MESSAGES.message.replace('%1', name).concat(serverTime);
         
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(`<p style="color: blue;">${message}</p>`);
-
+    
     } else if (pathname === '/COMP4537/labs/3/writeFile/') {
-        // Handle the /writeFile endpoint
         const textToWrite = query.text || '';
-        const filePath = path.join(__dirname, 'file.txt');
+        const filePath = path.join('/tmp', 'file.txt');
         
         fs.appendFile(filePath, `${textToWrite}\n`, (err) => {
             if (err) {
@@ -32,11 +30,10 @@ const server = http.createServer((req, res) => {
             res.writeHead(200, { 'Content-Type': 'text/plain' });
             res.end(`Successfully appended to file: ${textToWrite}`);
         });
-
+    
     } else if (pathname === '/COMP4537/labs/3/readFile/file.txt') {
-        // Handle the /readFile endpoint
-        const filePath = path.join(__dirname, 'file.txt');
-
+        const filePath = path.join('/tmp', 'file.txt');
+        
         fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
                 if (err.code === 'ENOENT') {
@@ -48,11 +45,11 @@ const server = http.createServer((req, res) => {
                 }
                 return;
             }
-
+            
             res.writeHead(200, { 'Content-Type': 'text/plain' });
             res.end(data);
         });
-
+    
     } else {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('404: Not Found');
