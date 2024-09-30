@@ -1,56 +1,54 @@
 const http = require('http');
-const url = require('url');
 const fs = require('fs');
 const path = require('path');
-const os = require('os');  // Import the os module
+const url = require('url');
 const { getDate } = require('./modules/utils');
-const locals = require('./lang/en/en.js');
 
-const server = http.createServer((req, res) => {
-    const parsedUrl = url.parse(req.url, true);
+const PORT = process.env.PORT || 8000;
+
+// Handle requests and routes
+function requestHandler(req, res) {
+    const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
     const pathname = parsedUrl.pathname;
-    const query = parsedUrl.query;
+    const query = parsedUrl.searchParams;
 
-    if (pathname === '/COMP4537/labs/3/getDate/') {
-        const name = query.name || 'Guest';
-        const serverTime = getDate();
-        const message = locals.MESSAGES.message.replace('%1', name).concat(serverTime);
-        
+    if (pathname === '/getDate/') {
+        const name = query.get('name') || 'Guest';
+        const currentTime = getDate();
         res.writeHead(200, { 'Content-Type': 'text/html' });
-        res.end(`<p style="color: blue;">${message}</p>`);
+        res.end(`<p style="color: blue;">Hello ${name}, what a beautiful day! Server current date and time is ${currentTime}</p>`);
 
-    } else if (pathname === '/COMP4537/labs/3/writeFile/') {
-        const textToWrite = query.text || '';
+    } else if (pathname === '/writeFile/') {
+        const text = query.get('text') || '';
         
-        // Use the tmp directory to write the file
-        const tmpDir = os.tmpdir();
-        const filePath = path.join(tmpDir, 'file.txt');
+        // Check if running on Vercel or locally
+        const isVercel = process.env.VERCEL_ENV !== undefined;
         
-        fs.appendFile(filePath, `${textToWrite}\n`, (err) => {
+        // For local testing, write to the project directory
+        const filePath = isVercel ? path.join('/tmp', 'file.txt') : path.join(__dirname, 'file.txt');
+        
+        fs.appendFile(filePath, `${text}\n`, (err) => {
             if (err) {
-                console.error('Error writing to file:', err);
                 res.writeHead(500, { 'Content-Type': 'text/plain' });
-                return res.end(`Error writing to file: ${err.message}`);
+                return res.end('Error writing to file');
             }
             res.writeHead(200, { 'Content-Type': 'text/plain' });
-            res.end(`Successfully appended to file: ${textToWrite}`);
+            res.end('Text added to file successfully');
         });
 
-    } else if (pathname === '/COMP4537/labs/3/readFile/file.txt') {
-        const filePath = path.join(os.tmpdir(), 'file.txt');
+    } else if (pathname === '/readFile/file.txt') {
+        const isVercel = process.env.VERCEL_ENV !== undefined;
+        const filePath = isVercel ? path.join('/tmp', 'file.txt') : path.join(__dirname, 'file.txt');
 
         fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
                 if (err.code === 'ENOENT') {
                     res.writeHead(404, { 'Content-Type': 'text/plain' });
-                    res.end('404: File not found');
-                } else {
-                    res.writeHead(500, { 'Content-Type': 'text/plain' });
-                    res.end('Error reading file');
+                    return res.end('File not found');
                 }
-                return;
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                return res.end('Error reading from file');
             }
-
             res.writeHead(200, { 'Content-Type': 'text/plain' });
             res.end(data);
         });
@@ -59,14 +57,14 @@ const server = http.createServer((req, res) => {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('404: Not Found');
     }
-});
+}
 
-// Conditional for local testing
+// Start the server locally or export for Vercel
 if (require.main === module) {
-    const PORT = 3000;
+    const server = http.createServer(requestHandler);
     server.listen(PORT, () => {
-        console.log(`Server is running locally on port ${PORT}`);
+        console.log(`Server is running on port ${PORT}`);
     });
 } else {
-    module.exports = server;
+    module.exports = requestHandler;
 }
