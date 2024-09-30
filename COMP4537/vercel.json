@@ -1,15 +1,11 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "labs/3/api/server.js",
-      "use": "@vercel/node"
+  "functions": {
+    "api/server.js": {
+      "runtime": "nodejs14.x"
     }
-  ],
+  },
   "routes": [
-    {
-      "src": "/getDate",
-      "dest": "/labs/3/api/server.js"
-    }
+    { "src": "/getDate", "dest": "/api/server.js" }
   ]
 }
