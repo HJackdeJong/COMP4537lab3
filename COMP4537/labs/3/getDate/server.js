@@ -2,6 +2,7 @@ const http = require('http');
 const url = require('url');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');  // Import the os module
 const { getDate } = require('./modules/utils');
 const locals = require('./lang/en/en.js');
 
@@ -17,10 +18,12 @@ const server = http.createServer((req, res) => {
         
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(`<p style="color: blue;">${message}</p>`);
-    
+
     } else if (pathname === '/COMP4537/labs/3/writeFile/') {
         const textToWrite = query.text || '';
-        const filePath = path.join('/tmp', 'file.txt');
+        
+        // Use os.tmpdir() to get the temporary directory, cross-platform compatible
+        const filePath = path.join(os.tmpdir(), 'file.txt');
         
         fs.appendFile(filePath, `${textToWrite}\n`, (err) => {
             if (err) {
@@ -30,10 +33,10 @@ const server = http.createServer((req, res) => {
             res.writeHead(200, { 'Content-Type': 'text/plain' });
             res.end(`Successfully appended to file: ${textToWrite}`);
         });
-    
+
     } else if (pathname === '/COMP4537/labs/3/readFile/file.txt') {
-        const filePath = path.join('/tmp', 'file.txt');
-        
+        const filePath = path.join(os.tmpdir(), 'file.txt');
+
         fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
                 if (err.code === 'ENOENT') {
@@ -45,11 +48,11 @@ const server = http.createServer((req, res) => {
                 }
                 return;
             }
-            
+
             res.writeHead(200, { 'Content-Type': 'text/plain' });
             res.end(data);
         });
-    
+
     } else {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('404: Not Found');
