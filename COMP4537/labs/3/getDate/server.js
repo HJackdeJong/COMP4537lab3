@@ -2,7 +2,7 @@ const http = require('http');
 const url = require('url');
 const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { getDate } = require('./modules/utils');
-const locals = require('./lang/en/en.js');
+const { MESSAGES } = require('./lang/en/en.js');
 require('dotenv').config();
 
 // Configure the S3 Client using environment variables
@@ -24,16 +24,16 @@ const server = http.createServer((req, res) => {
     const query = parsedUrl.query;
 
     if (pathname === '/COMP4537/labs/3/getDate/') {
-        const name = query.name || 'Guest';
+        const name = query.name || MESSAGES.defaultName;
         const serverTime = getDate();
-        const message = locals.MESSAGES.message.replace('%1', name).concat(serverTime);
+        const message = MESSAGES.greeting.replace('%1', name).concat(serverTime);
 
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(`<p style="color: blue;">${message}</p>`);
 
     } else if (pathname === '/COMP4537/labs/3/writeFile/') {
-        console.log("AWS Region:", process.env.AWS_REGION);
-        const textToWrite = query.text || '';
+        console.log(MESSAGES.awsRegionLog, process.env.AWS_REGION);
+        const textToWrite = query.text || MESSAGES.defaultText;
 
         // Read the file from S3
         s3.send(new GetObjectCommand({ Bucket: bucketName, Key: fileName }))
@@ -54,12 +54,12 @@ const server = http.createServer((req, res) => {
             })
             .then(() => {
                 res.writeHead(200, { 'Content-Type': 'text/plain' });
-                res.end(`Successfully appended to file: ${textToWrite}`);
+                res.end(MESSAGES.successAppend.replace('%1', textToWrite));
             })
             .catch(err => {
                 console.error(err);
                 res.writeHead(500, { 'Content-Type': 'text/plain' });
-                res.end('Error writing to file');
+                res.end(MESSAGES.errorWritingFile);
             });
 
     } else if (pathname === '/COMP4537/labs/3/readFile/file.txt') {
@@ -75,17 +75,17 @@ const server = http.createServer((req, res) => {
             .catch(err => {
                 if (err.name === 'NoSuchKey') {
                     res.writeHead(404, { 'Content-Type': 'text/plain' });
-                    res.end('404: File not found');
+                    res.end(MESSAGES.fileNotFound);
                 } else {
                     console.error(err);
                     res.writeHead(500, { 'Content-Type': 'text/plain' });
-                    res.end('Error reading file');
+                    res.end(MESSAGES.errorReadingFile);
                 }
             });
 
     } else {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('404: Not Found');
+        res.end(MESSAGES.notFound);
     }
 });
 
@@ -103,7 +103,7 @@ function streamToString(stream) {
 if (require.main === module) {
     const PORT = 3000;
     server.listen(PORT, () => {
-        console.log(`Server is running locally on port ${PORT}`);
+        console.log(MESSAGES.serverRunning.replace('%1', PORT));
     });
 } else {
     module.exports = server;
