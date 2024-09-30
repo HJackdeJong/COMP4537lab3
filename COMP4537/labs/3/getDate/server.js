@@ -1,69 +1,98 @@
 const http = require('http');
-const url = require('url');
 const fs = require('fs');
 const path = require('path');
+const url = require('url');
 const { getDate } = require('./modules/utils');
-const locals = require('./lang/en/en.js');
 
-const server = http.createServer((req, res) => {
-    const parsedUrl = url.parse(req.url, true);
-    const pathname = parsedUrl.pathname;
-    const query = parsedUrl.query;
+const PORT = process.env.PORT || 8000;
 
-    if (pathname === '/COMP4537/labs/3/getDate/') {
-        const name = query.name || 'Guest';
-        const serverTime = getDate();
-        const message = locals.MESSAGES.message.replace('%1', name).concat(serverTime);
+function serveStaticFiles(req, res, pathname) {
+    const basePath = path.join(__dirname, '../public');
+    let filePath = pathname === '/' ? '/index.html' : pathname;
+    const fullPath = path.join(basePath, filePath);
+    const ext = path.extname(fullPath).toLowerCase();
 
-        res.writeHead(200, { 'Content-Type': 'text/html' });
-        res.end(`<p style="color: blue;">${message}</p>`);
-
-    } else if (pathname === '/COMP4537/labs/3/writeFile/') {
-        const textToWrite = query.text || '';
-
-        // Path to file.txt in the current directory (project folder)
-        const filePath = path.join(__dirname, 'file.txt');
-
-        // Append the text to the file
-        fs.appendFile(filePath, `${textToWrite}\n`, (err) => {
-            if (err) {
+    fs.readFile(fullPath, (err, data) => {
+        if (err) {
+            if (err.code === 'ENOENT') {
+                res.writeHead(404, { 'Content-Type': 'text/plain' });
+                res.end('Not Found');
+            } else {
                 res.writeHead(500, { 'Content-Type': 'text/plain' });
-                return res.end('Error writing to file');
+                res.end('Internal Server Error');
             }
-            res.writeHead(200, { 'Content-Type': 'text/plain' });
-            res.end(`Successfully appended to file: ${textToWrite}`);
-        });
+            return;
+        }
+        res.writeHead(200, { 'Content-Type': mimeTypes[ext] });
+        res.end(data);
+    });
+}
 
-    } else if (pathname === '/COMP4537/labs/3/readFile/file.txt') {
+function requestHandler(req, res) {
+    const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+    const pathname = parsedUrl.pathname;
+    const query = parsedUrl.searchParams;
+
+    if (pathname === '/getDate/') {
+        const name = query.get('name') || 'Guest';
+        const currentTime = getDate();
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(`Hello ${name}, what a beautiful day! Server current date and time is ${currentTime}`);
+    } else if (pathname === '/writeFile/') {
+        const text = query.get('text') || '';
+        const filePath = path.join(__dirname, 'file.txt');  // Writing to file.txt in the current directory
+
+        // Append text to file.txt
+        fs.appendFile(filePath, text + '\n', (err) => {
+            if (err) {
+                res.writeHead(500);
+                res.end('Error writing to file');
+            } else {
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.end('Text added to file successfully');
+            }
+        });
+    } else if (pathname === '/readFile/file.txt') {
         const filePath = path.join(__dirname, 'file.txt');
 
+        // Read from file.txt
         fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
                 if (err.code === 'ENOENT') {
-                    res.writeHead(404, { 'Content-Type': 'text/plain' });
-                    res.end('404: File not found');
+                    res.writeHead(404);
+                    res.end('File not found');
                 } else {
-                    res.writeHead(500, { 'Content-Type': 'text/plain' });
-                    res.end('Error reading file');
+                    res.writeHead(500);
+                    res.end('Error reading from file');
                 }
-                return;
+            } else {
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.end(data);
             }
-
-            res.writeHead(200, { 'Content-Type': 'text/plain' });
-            res.end(data);
         });
-
     } else {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('404: Not Found');
     }
-});
+}
 
 if (require.main === module) {
-    const PORT = 3000;
+    const server = http.createServer(requestHandler);
     server.listen(PORT, () => {
-        console.log(`Server is running locally on port ${PORT}`);
+        console.log(`Server is running on port ${PORT}`);
     });
 } else {
-    module.exports = server;
+    module.exports = requestHandler;
 }
+
+const mimeTypes = {
+    '.html': 'text/html',
+    '.txt': 'text/html',
+    '.js': 'text/javascript',
+    '.css': 'text/css',
+    '.json': 'application/json',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml'
+};
