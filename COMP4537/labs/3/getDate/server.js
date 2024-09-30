@@ -27,8 +27,9 @@ const server = http.createServer((req, res) => {
         
         fs.appendFile(filePath, `${textToWrite}\n`, (err) => {
             if (err) {
+                console.error('Error writing to file:', err);  // Log the error to the console
                 res.writeHead(500, { 'Content-Type': 'text/plain' });
-                return res.end('Error writing to file');
+                return res.end(`Error writing to file: ${err.message}`);  // Return the error message to the client
             }
             res.writeHead(200, { 'Content-Type': 'text/plain' });
             res.end(`Successfully appended to file: ${textToWrite}`);
