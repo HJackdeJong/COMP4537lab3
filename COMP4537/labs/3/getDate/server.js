@@ -1,20 +1,26 @@
 const http = require('http');
-const locals = require('./locals/en/en.js');
-const { getDate } = require('./modules/utils.js');
+const locals = require('./locals/en/en.js'); // Adjust the path as per your folder structure
+const { getDate } = require('./modules/utils.js'); // Adjust the path as per your folder structure
 
-http.createServer(function(req, res) {
+const server = (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
+    console.log(`Received pathname: ${url.pathname}`);
 
-    const name = url.searchParams.get('name') || "Guest";
-    const currentDate = getDate();
+    if (url.pathname === '/getDate') {
+        const name = url.searchParams.get('name') || "Guest";
+        const currentDate = getDate();
 
-    const message = locals.MESSAGES.message
-        .replace("%1", name)
-        .concat(currentDate);
+        const message = locals.MESSAGES.message
+            .replace("%1", name)
+            .concat(currentDate);
 
-    res.writeHead(200, { "Content-Type": "text/html" });
-    res.end(`<div style="color:blue">${message}</div>`);
+        res.writeHead(200, { "Content-Type": "text/html" });
+        res.end(`<div style="color:blue">${message}</div>`);
+    } else {
+        res.writeHead(404, { "Content-Type": "text/html" });
+        res.end("404 Not Found");
+    }
+};
 
-}).listen(7000);
-
-console.log("HTTP server is running");
+// Export the handler for Vercel
+module.exports = server;
