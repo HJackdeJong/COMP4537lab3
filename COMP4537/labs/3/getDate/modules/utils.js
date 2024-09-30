@@ -1,23 +1,19 @@
 function getDate() {
-    // Get the current date and time
-    const now = new Date();
+    // Get the current date and time in the Pacific Time Zone (PST/PDT)
+    const now = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });
 
-    // Convert the time to the Pacific Time Zone using toLocaleString()
-    const options = { timeZone: 'America/Los_Angeles', timeZoneName: 'short' };
+    // Create a Date object from the converted Pacific Time string
+    const pacificDate = new Date(now);
 
-    // Get the individual parts of the date and time
-    const weekday = now.toLocaleString('en-US', { weekday: 'short', timeZone: 'America/Los_Angeles' });
-    const month = now.toLocaleString('en-US', { month: 'short', timeZone: 'America/Los_Angeles' });
-    const day = now.toLocaleString('en-US', { day: 'numeric', timeZone: 'America/Los_Angeles' });
-    const year = now.toLocaleString('en-US', { year: 'numeric', timeZone: 'America/Los_Angeles' });
-    const time = now.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles' });
+    // Convert the date to a string, which will be in the format: 
+    // "Wed Sep 01 2023 12:52:14 GMT+0000 (Coordinated Universal Time)"
+    let dateString = pacificDate.toString();
 
-    // Get the time zone offset and name
-    const timeZoneString = now.toLocaleTimeString('en-US', options).match(/\(([^)]+)\)$/)[1];
-    const gmtOffset = now.toLocaleTimeString('en-US', options).match(/GMT([+-]\d{4})/)[1];
+    // Replace "+0000 (Coordinated Universal Time)" with "-0800 (Pacific Standard Time)"
+    // You may also want to handle daylight saving time (PDT) here, depending on your requirements
+    dateString = dateString.replace("GMT+0000 (Coordinated Universal Time)", "GMT-0800 (Pacific Standard Time)");
 
-    // Construct the desired output
-    return `${weekday} ${month} ${day} ${year} ${time} GMT${gmtOffset} (${timeZoneString})`;
+    return dateString;
 }
 
 module.exports = { getDate };
