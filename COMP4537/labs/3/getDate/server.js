@@ -1,98 +1,77 @@
 const http = require('http');
+const url = require('url');
 const fs = require('fs');
 const path = require('path');
-const url = require('url');
 const { getDate } = require('./modules/utils');
+const locals = require('./lang/en/en.js');
 
-const PORT = process.env.PORT || 8000;
-
-function serveStaticFiles(req, res, pathname) {
-    const basePath = path.join(__dirname, '../public');
-    let filePath = pathname === '/' ? '/index.html' : pathname;
-    const fullPath = path.join(basePath, filePath);
-    const ext = path.extname(fullPath).toLowerCase();
-
-    fs.readFile(fullPath, (err, data) => {
-        if (err) {
-            if (err.code === 'ENOENT') {
-                res.writeHead(404, { 'Content-Type': 'text/plain' });
-                res.end('Not Found');
-            } else {
-                res.writeHead(500, { 'Content-Type': 'text/plain' });
-                res.end('Internal Server Error');
-            }
-            return;
-        }
-        res.writeHead(200, { 'Content-Type': mimeTypes[ext] });
-        res.end(data);
-    });
-}
-
-function requestHandler(req, res) {
-    const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+const server = http.createServer((req, res) => {
+    const parsedUrl = url.parse(req.url, true);
     const pathname = parsedUrl.pathname;
-    const query = parsedUrl.searchParams;
+    const query = parsedUrl.query;
 
-    if (pathname === '/getDate/') {
-        const name = query.get('name') || 'Guest';
-        const currentTime = getDate();
+    if (pathname === '/COMP4537/labs/3/getDate/') {
+        const name = query.name || 'Guest';
+        const serverTime = getDate();
+        const message = locals.MESSAGES.message.replace('%1', name).concat(serverTime);
+
         res.writeHead(200, { 'Content-Type': 'text/html' });
-        res.end(`Hello ${name}, what a beautiful day! Server current date and time is ${currentTime}`);
-    } else if (pathname === '/writeFile/') {
-        const text = query.get('text') || '';
-        const filePath = path.join(__dirname, 'file.txt');  // Writing to file.txt in the current directory
+        res.end(`<p style="color: blue;">${message}</p>`);
 
-        // Append text to file.txt
-        fs.appendFile(filePath, text + '\n', (err) => {
+    } else if (pathname === '/COMP4537/labs/3/writeFile/') {
+        const textToWrite = query.text || '';
+
+        // Use different paths based on environment
+        const isVercel = process.env.VERCEL_ENV !== undefined;
+        const filePath = isVercel 
+            ? path.join('/tmp', 'file.txt')  // Vercel environment
+            : path.join(__dirname, 'file.txt');  // Local environment
+
+        // Append the text to the file
+        fs.appendFile(filePath, `${textToWrite}\n`, (err) => {
             if (err) {
-                res.writeHead(500);
-                res.end('Error writing to file');
-            } else {
-                res.writeHead(200, { 'Content-Type': 'text/html' });
-                res.end('Text added to file successfully');
+                console.error('File writing error:', err);  // Log for debugging
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                return res.end(`Error writing to file: ${err.message}`);
             }
+            res.writeHead(200, { 'Content-Type': 'text/plain' });
+            res.end(`Successfully appended to file: ${textToWrite}`);
         });
-    } else if (pathname === '/readFile/file.txt') {
-        const filePath = path.join(__dirname, 'file.txt');
 
-        // Read from file.txt
+    } else if (pathname === '/COMP4537/labs/3/readFile/file.txt') {
+        const isVercel = process.env.VERCEL_ENV !== undefined;
+        const filePath = isVercel 
+            ? path.join('/tmp', 'file.txt')  // Vercel environment
+            : path.join(__dirname, 'file.txt');  // Local environment
+
+        // Read from the file
         fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
                 if (err.code === 'ENOENT') {
-                    res.writeHead(404);
-                    res.end('File not found');
-                } else {
-                    res.writeHead(500);
-                    res.end('Error reading from file');
+                    res.writeHead(404, { 'Content-Type': 'text/plain' });
+                    return res.end('404: File not found');
                 }
-            } else {
-                res.writeHead(200, { 'Content-Type': 'text/html' });
-                res.end(data);
+                console.error('File reading error:', err);  // Log for debugging
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                return res.end('Error reading file');
             }
+
+            res.writeHead(200, { 'Content-Type': 'text/plain' });
+            res.end(data);
         });
+
     } else {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('404: Not Found');
     }
-}
+});
 
+// Conditional for local testing
 if (require.main === module) {
-    const server = http.createServer(requestHandler);
+    const PORT = 3000;
     server.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`);
+        console.log(`Server is running locally on port ${PORT}`);
     });
 } else {
-    module.exports = requestHandler;
+    module.exports = server;
 }
-
-const mimeTypes = {
-    '.html': 'text/html',
-    '.txt': 'text/html',
-    '.js': 'text/javascript',
-    '.css': 'text/css',
-    '.json': 'application/json',
-    '.png': 'image/png',
-    '.jpg': 'image/jpeg',
-    '.gif': 'image/gif',
-    '.svg': 'image/svg+xml'
-};
