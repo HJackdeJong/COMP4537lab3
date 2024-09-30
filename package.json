@@ -7,5 +7,9 @@
     "start": "node server.js"
   },
   "author": "Harrison de Jong",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@octokit/rest": "^21.0.2",
+    "dotenv": "^16.4.5"
+  }
 }
