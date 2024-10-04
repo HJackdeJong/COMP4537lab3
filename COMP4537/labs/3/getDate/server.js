@@ -31,7 +31,6 @@ const server = http.createServer((req, res) => {
         res.end(`<p style="color: blue;">${message}</p>`);
 
     } else if (pathname === PATHS.writeFile) {
-        console.log(MESSAGES.awsRegionLog, process.env.AWS_REGION);
         const textToWrite = query.text || MESSAGES.defaultText;
 
         s3.send(new GetObjectCommand({ Bucket: bucketName, Key: fileName }))
